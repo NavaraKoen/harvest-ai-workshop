@@ -1,0 +1,3 @@
+[console_scripts]
+api = api.main:main
+worker = temporal_app.worker:main

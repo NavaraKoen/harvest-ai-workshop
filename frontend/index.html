@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Temporal AI Chat</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: .5px; }
+    #btn-new-chat {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    #btn-new-chat:hover { background: #c73652; }
+
+    /* ── Chat container ── */
+    #chat-wrapper {
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      margin: 24px 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+      overflow: hidden;
+      position: relative;  /* anchor for the confirmation overlay */
+    }
+
+    /* ── Messages ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 300px;
+      max-height: 60vh;
+    }
+    #empty-state {
+      margin: auto;
+      text-align: center;
+      color: #aaa;
+    }
+    #empty-state .icon { font-size: 3rem; margin-bottom: 8px; }
+    #empty-state p { font-size: .95rem; }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 75%;
+    }
+    .msg.assistant { align-self: flex-start; }
+    .msg.user      { align-self: flex-end; }
+    .msg.tool      { align-self: flex-start; }
+    .msg.system    { align-self: center; max-width: 90%; }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: .92rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .assistant .msg-bubble { background: #f0f2ff; color: #1a1a2e; border-bottom-left-radius: 4px; }
+    .user .msg-bubble      { background: #1a1a2e; color: #fff;     border-bottom-right-radius: 4px; }
+    .tool .msg-bubble      { background: #e8f5e9; color: #2e7d32; font-family: monospace; font-size: .85rem; border-bottom-left-radius: 4px; }
+    .system .msg-bubble    { background: #fff3e0; color: #795548; font-size: .82rem; text-align: center; border-radius: 8px; }
+
+    .msg-label {
+      font-size: .72rem;
+      color: #999;
+      margin-bottom: 3px;
+      padding: 0 4px;
+    }
+    .user .msg-label { text-align: right; }
+
+    /* ── Typing indicator ── */
+    #typing {
+      display: none;
+      align-self: flex-start;
+      padding: 10px 14px;
+      background: #f0f2ff;
+      border-radius: 14px;
+      border-bottom-left-radius: 4px;
+    }
+    #typing span {
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: #7b8cde;
+      border-radius: 50%;
+      animation: bounce .9s infinite;
+    }
+    #typing span:nth-child(2) { animation-delay: .15s; margin: 0 4px; }
+    #typing span:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40%           { transform: translateY(-6px); }
+    }
+
+    /* ── Confirmation bar (overlay, pinned to bottom of chat-wrapper) ── */
+    #confirmation-bar {
+      display: none;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff8e1;
+      border-top: 2px solid #ffcc02;
+      padding: 14px 20px;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 -4px 16px rgba(0,0,0,.10);
+      border-radius: 0 0 12px 12px;
+      z-index: 10;
+    }
+    .confirm-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .88rem;
+      color: #666;
+      font-weight: 500;
+    }
+    .confirm-icon { font-size: 1.1rem; }
+    .tool-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+    .tool-info {
+      font-family: monospace;
+      font-size: .78rem;
+      background: #fffde7;
+      border: 1px solid #ffe082;
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: #555;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    #confirmation-bar .btn-row { display: flex; gap: 10px; }
+    .btn-confirm {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      font-size: .88rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn-confirm:hover { opacity: .85; }
+    #btn-yes { background: #4caf50; color: #fff; }
+    #btn-no  { background: #e57373; color: #fff; }
+
+    /* ── Input bar ── */
+    #input-bar {
+      display: none;
+      border-top: 1px solid #eee;
+      padding: 14px 16px;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    #user-input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: .92rem;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      transition: border-color .2s;
+    }
+    #user-input:focus { border-color: #7b8cde; }
+    #btn-send {
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: .9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .2s;
+    }
+    #btn-send:hover   { background: #2d2d4e; }
+    #btn-send:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* ── Ended notice ── */
+    #ended-notice {
+      display: none;
+      border-top: 1px solid #eee;
+      padding: 14px;
+      text-align: center;
+      font-size: .88rem;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Temporal AI Chat</h1>
+  <button id="btn-new-chat">+ New Chat</button>
+</header>
+
+<div id="chat-wrapper">
+  <div id="messages">
+    <div id="empty-state">
+      <div class="icon">💬</div>
+      <p>Click <strong>New Chat</strong> to start a conversation.</p>
+    </div>
+    <div id="typing">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <div id="confirmation-bar">
+    <div class="confirm-header">
+      <span class="confirm-icon">🔧</span>
+      <span>The agent wants to execute a tool</span>
+    </div>
+    <div class="tool-name" id="tool-name-label"></div>
+    <div class="tool-info" id="tool-info"></div>
+    <div class="btn-row">
+      <button class="btn-confirm" id="btn-yes">✔ Approve</button>
+      <button class="btn-confirm" id="btn-no">✘ Decline</button>
+    </div>
+  </div>
+
+  <div id="input-bar">
+    <textarea id="user-input" rows="1" placeholder="Type your message…"></textarea>
+    <button id="btn-send">Send</button>
+  </div>
+
+  <div id="ended-notice">Chat session has ended. Start a new chat to continue.</div>
+</div>
+
+<script>
+  const API = "";   // same origin; set to "http://localhost:8000" if running separately
+  const POLL_MS = 1200;
+
+  let workflowId = null;
+  let pollTimer  = null;
+  let lastHistoryLen = 0;
+  let currentState = null;
+
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  const elMessages       = document.getElementById("messages");
+  const elEmptyState     = document.getElementById("empty-state");
+  const elTyping         = document.getElementById("typing");
+  const elInputBar       = document.getElementById("input-bar");
+  const elUserInput      = document.getElementById("user-input");
+  const elBtnSend        = document.getElementById("btn-send");
+  const elConfirmBar     = document.getElementById("confirmation-bar");
+  const elToolNameLabel  = document.getElementById("tool-name-label");
+  const elToolInfo       = document.getElementById("tool-info");
+  const elBtnYes         = document.getElementById("btn-yes");
+  const elBtnNo          = document.getElementById("btn-no");
+  const elEndedNotice    = document.getElementById("ended-notice");
+  const elBtnNewChat     = document.getElementById("btn-new-chat");
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function roleLabel(role) {
+    return { assistant: "Assistant", user: "You", tool: "Tool", system: "System" }[role] ?? role;
+  }
+
+  function addMessage(role, content) {
+    const wrap = document.createElement("div");
+    wrap.className = `msg ${role}`;
+
+    const label = document.createElement("div");
+    label.className = "msg-label";
+    label.textContent = roleLabel(role);
+
+    const bubble = document.createElement("div");
+    bubble.className = "msg-bubble";
+    bubble.textContent = content;
+
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+    elMessages.insertBefore(wrap, elTyping);
+    elMessages.scrollTop = elMessages.scrollHeight;
+  }
+
+  function showTyping(visible) {
+    elTyping.style.display = visible ? "flex" : "none";
+    if (visible) elMessages.scrollTop = elMessages.scrollHeight;
+  }
+
+  function setUI(state) {
+    elInputBar.style.display    = "none";
+    elConfirmBar.style.display  = "none";
+    elEndedNotice.style.display = "none";
+
+    if (state === "waiting_input") {
+      elInputBar.style.display = "flex";
+      elUserInput.focus();
+    } else if (state === "waiting_confirmation") {
+      elConfirmBar.style.display = "flex";
+    } else if (state === "ended") {
+      elEndedNotice.style.display = "block";
+      stopPolling();
+    }
+
+    showTyping(state === "running" || state === "starting");
+  }
+
+  // ── Polling ───────────────────────────────────────────────────────────────
+  async function poll() {
+    if (!workflowId) return;
+    try {
+      const res  = await fetch(`${API}/api/chat/${workflowId}/state`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Render new history entries (skip internal markers and tool results)
+      const entries = data.history ?? [];
+      for (let i = lastHistoryLen; i < entries.length; i++) {
+        const { role, content } = entries[i];
+        if (content === "[CHAT_START]") continue;
+        if (role === "tool") continue;  // tool results stay in LLM context only
+        addMessage(role, content);
+      }
+      lastHistoryLen = entries.length;
+
+      // Update confirmation bar when tool approval is pending
+      if (data.pending_tool) {
+        const elToolName = document.getElementById("tool-name-label");
+        elToolName.textContent = data.pending_tool;
+        const args = JSON.stringify(data.pending_tool_args ?? {}, null, 2);
+        elToolInfo.textContent = args === "{}" ? "(no arguments)" : args;
+      }
+
+      if (data.state !== currentState) {
+        currentState = data.state;
+        setUI(data.state);
+      }
+    } catch (e) {
+      // Swallow network errors during polling
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(poll, POLL_MS);
+    poll();  // immediate first tick
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  // ── Start new chat ────────────────────────────────────────────────────────
+  elBtnNewChat.addEventListener("click", async () => {
+    stopPolling();
+    workflowId = null;
+    lastHistoryLen = 0;
+    currentState = null;
+
+    // Clear messages (keep the typing element)
+    [...elMessages.children].forEach(el => {
+      if (el !== elTyping) el.remove();
+    });
+    elEmptyState && elEmptyState.remove();
+
+    elInputBar.style.display    = "none";
+    elConfirmBar.style.display  = "none";
+    elEndedNotice.style.display = "none";
+    showTyping(true);
+
+    try {
+      const res  = await fetch(`${API}/api/chat/start`, { method: "POST" });
+      const data = await res.json();
+      workflowId = data.workflow_id;
+      startPolling();
+    } catch (e) {
+      showTyping(false);
+      addMessage("system", "⚠ Could not reach the API. Is it running?");
+    }
+  });
+
+  // ── Send user message ─────────────────────────────────────────────────────
+  async function sendMessage() {
+    const text = elUserInput.value.trim();
+    if (!text || !workflowId) return;
+
+    elUserInput.value = "";
+    elUserInput.style.height = "auto";
+    elBtnSend.disabled = true;
+    elInputBar.style.display = "none";
+    showTyping(true);
+
+    try {
+      await fetch(`${API}/api/chat/${workflowId}/input`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+    } finally {
+      elBtnSend.disabled = false;
+    }
+  }
+
+  elBtnSend.addEventListener("click", sendMessage);
+  elUserInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  // Auto-grow textarea
+  elUserInput.addEventListener("input", () => {
+    elUserInput.style.height = "auto";
+    elUserInput.style.height = elUserInput.scrollHeight + "px";
+  });
+
+  // ── Confirmation buttons ──────────────────────────────────────────────────
+  async function sendConfirmation(confirmed) {
+    elConfirmBar.style.display = "none";
+    showTyping(true);
+    await fetch(`${API}/api/chat/${workflowId}/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmed }),
+    });
+  }
+
+  elBtnYes.addEventListener("click", () => sendConfirmation(true));
+  elBtnNo.addEventListener("click",  () => sendConfirmation(false));
+</script>
+</body>
+</html>
