@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.env
+
+# uv
+.python-version
+
+# Build / dist
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
