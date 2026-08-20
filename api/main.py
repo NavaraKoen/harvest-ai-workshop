@@ -68,9 +68,10 @@ async def start_chat() -> StartChatResponse:
     """Start a new ChatWorkflow and return its ID."""
     client = await _client()
     workflow_id = f"chat-{uuid.uuid4()}"
+    require_confirmation = os.getenv("CONFIRMATION", "true").lower() != "false"
     await client.start_workflow(
         ChatWorkflow.run,
-        "[CHAT_START]",
+        args=["[CHAT_START]", require_confirmation],
         id=workflow_id,
         task_queue=TASK_QUEUE,
     )
@@ -117,6 +118,18 @@ async def get_state(workflow_id: str) -> ChatStateResponse:
         pending_tool_args=state_dict.get("pending_tool_args"),
         history=history,
     )
+
+
+@app.get("/api/chat/{workflow_id}/llm-log")
+async def get_llm_log(workflow_id: str) -> Dict:
+    """Query the workflow for the full LLM call log."""
+    client = await _client()
+    handle = client.get_workflow_handle(workflow_id)
+    try:
+        log = await handle.query(ChatWorkflow.get_llm_log)
+    except RPCError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"entries": log}
 
 
 # ---------------------------------------------------------------------------

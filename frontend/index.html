@@ -13,7 +13,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
+      height: 100vh;  /* fixed, not min: flex children must have bounded height for scroll to work */
+      overflow: hidden;
     }
 
     /* ── Header ── */
@@ -51,20 +52,19 @@
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,.08);
-      overflow: hidden;
+      overflow: hidden;  /* clip border-radius; children scroll within their own bounds */
       position: relative;  /* anchor for the confirmation overlay */
     }
 
     /* ── Messages ── */
     #messages {
       flex: 1;
+      min-height: 0;  /* flex scroll fix */
       overflow-y: auto;
       padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      min-height: 300px;
-      max-height: 60vh;
     }
     #empty-state {
       margin: auto;
@@ -218,6 +218,93 @@
     #btn-send:hover   { background: #2d2d4e; }
     #btn-send:disabled { background: #ccc; cursor: not-allowed; }
 
+    /* ── Tab bar ── */
+    #tab-bar {
+      display: none;  /* shown after a chat starts */
+      border-bottom: 1px solid #eee;
+      padding: 0 16px;
+      gap: 4px;
+      background: #fafafa;
+      border-radius: 12px 12px 0 0;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 16px;
+      font-size: .88rem;
+      cursor: pointer;
+      color: #888;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active { color: #1a1a2e; border-bottom-color: #1a1a2e; font-weight: 600; }
+    .tab-btn:hover:not(.active) { color: #555; }
+
+    /* ── LLM log panel ── */
+    #llm-log-panel {
+      display: none;
+      flex: 1;
+      min-height: 0;  /* flex scroll fix: allow panel to shrink so overflow-y kicks in */
+      overflow-y: auto;
+      padding: 16px;
+      gap: 12px;
+      flex-direction: column;
+      background: #f8f9ff;
+    }
+    .log-entry {
+      background: #fff;
+      border: 1px solid #e0e4ff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .log-entry-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #f0f2ff;
+      cursor: pointer;
+      user-select: none;
+      font-size: .82rem;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    .log-entry-header .action-badge {
+      font-size: .72rem;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .log-entry-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .log-section-label { font-size: .72rem; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: .5px; }
+    .log-messages { display: flex; flex-direction: column; gap: 4px; }
+    .log-msg {
+      font-size: .78rem;
+      font-family: monospace;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-msg.system    { background: #fff3e0; color: #6d4c41; }
+    .log-msg.user      { background: #e8eaf6; color: #283593; }
+    .log-msg.assistant { background: #e8f5e9; color: #2e7d32; }
+    .log-msg-role { font-weight: 700; margin-bottom: 2px; }
+    .log-raw {
+      font-family: monospace;
+      font-size: .78rem;
+      background: #f3f4f6;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 6px 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
     /* ── Ended notice ── */
     #ended-notice {
       display: none;
@@ -237,6 +324,11 @@
 </header>
 
 <div id="chat-wrapper">
+  <div id="tab-bar">
+    <button class="tab-btn active" data-tab="chat">Chat</button>
+    <button class="tab-btn" data-tab="llm-log">LLM Log</button>
+  </div>
+
   <div id="messages">
     <div id="empty-state">
       <div class="icon">💬</div>
@@ -246,6 +338,8 @@
       <span></span><span></span><span></span>
     </div>
   </div>
+
+  <div id="llm-log-panel"></div>
 
   <div id="confirmation-bar">
     <div class="confirm-header">
@@ -291,6 +385,114 @@
   const elBtnNo          = document.getElementById("btn-no");
   const elEndedNotice    = document.getElementById("ended-notice");
   const elBtnNewChat     = document.getElementById("btn-new-chat");
+  const elTabBar         = document.getElementById("tab-bar");
+  const elLlmLogPanel    = document.getElementById("llm-log-panel");
+  let activeTab = "chat";
+  let lastLogLen = 0;
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  elTabBar.addEventListener("click", e => {
+    const btn = e.target.closest(".tab-btn");
+    if (!btn) return;
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b === btn));
+    elMessages.parentElement.querySelectorAll("#messages, #llm-log-panel").forEach(el => {
+      el.style.display = "none";
+    });
+    if (activeTab === "chat") {
+      elMessages.style.display = "flex";
+    } else {
+      elLlmLogPanel.style.display = "flex";
+    }
+  });
+
+  // ── LLM log rendering ────────────────────────────────────────────────────
+  function renderLogEntry(entry) {
+    const el = document.createElement("div");
+    el.className = "log-entry";
+
+    const header = document.createElement("div");
+    header.className = "log-entry-header";
+    header.innerHTML = `<span>Call #${entry.call}</span><span class="action-badge">${entry.action_type}</span>`;
+    header.addEventListener("click", () => body.style.display = body.style.display === "none" ? "flex" : "none");
+
+    const body = document.createElement("div");
+    body.className = "log-entry-body";
+
+    // Input messages
+    const inLabel = document.createElement("div");
+    inLabel.className = "log-section-label";
+    inLabel.textContent = "Input messages";
+    const msgs = document.createElement("div");
+    msgs.className = "log-messages";
+    for (const msg of (entry.input ?? [])) {
+      const m = document.createElement("div");
+      m.className = `log-msg ${msg.role}`;
+      const LIMIT = 300;
+      const full = msg.content;
+      const needsTrunc = msg.role === "system" && full.length > LIMIT;
+      const shortText = needsTrunc ? full.slice(0, LIMIT) : full;
+
+      const contentDiv = document.createElement("div");
+      contentDiv.textContent = shortText + (needsTrunc ? "…" : "");
+
+      m.innerHTML = `<div class="log-msg-role">${msg.role}</div>`;
+      m.appendChild(contentDiv);
+
+      if (needsTrunc) {
+        const toggle = document.createElement("a");
+        toggle.href = "#";
+        toggle.style.cssText = "font-size:.72rem;color:#7b8cde;display:block;margin-top:2px";
+        toggle.textContent = "show more";
+        let expanded = false;
+        toggle.addEventListener("click", e => {
+          e.preventDefault();
+          expanded = !expanded;
+          contentDiv.textContent = expanded ? full : shortText + "…";
+          toggle.textContent = expanded ? "show less" : "show more";
+        });
+        m.appendChild(toggle);
+      }
+
+      msgs.appendChild(m);
+    }
+
+    // Raw output
+    const outLabel = document.createElement("div");
+    outLabel.className = "log-section-label";
+    outLabel.textContent = "Raw LLM output";
+    const raw = document.createElement("div");
+    raw.className = "log-raw";
+    raw.textContent = entry.raw_output ?? "";
+
+    body.appendChild(inLabel);
+    body.appendChild(msgs);
+    body.appendChild(outLabel);
+    body.appendChild(raw);
+
+    el.appendChild(header);
+    el.appendChild(body);
+    return el;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  async function pollLlmLog() {
+    if (!workflowId) return;
+    try {
+      const res = await fetch(`${API}/api/chat/${workflowId}/llm-log`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const entries = data.entries ?? [];
+      for (let i = lastLogLen; i < entries.length; i++) {
+        elLlmLogPanel.appendChild(renderLogEntry(entries[i]));
+        elLlmLogPanel.scrollTop = elLlmLogPanel.scrollHeight;
+      }
+      lastLogLen = entries.length;
+    } catch (e) { /* swallow */ }
+  }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function roleLabel(role) {
@@ -375,8 +577,9 @@
 
   function startPolling() {
     stopPolling();
-    pollTimer = setInterval(poll, POLL_MS);
-    poll();  // immediate first tick
+    pollTimer = setInterval(() => { poll(); pollLlmLog(); }, POLL_MS);
+    poll();
+    pollLlmLog();
   }
 
   function stopPolling() {
@@ -388,12 +591,20 @@
     stopPolling();
     workflowId = null;
     lastHistoryLen = 0;
+    lastLogLen = 0;
     currentState = null;
 
-    // Clear messages (keep the typing element)
+    // Clear messages and log (keep the typing element)
     [...elMessages.children].forEach(el => {
       if (el !== elTyping) el.remove();
     });
+    elLlmLogPanel.innerHTML = "";
+    // Switch to chat tab and show tab bar
+    activeTab = "chat";
+    document.querySelectorAll(".tab-btn").forEach((b, i) => b.classList.toggle("active", i === 0));
+    elMessages.style.display = "flex";
+    elLlmLogPanel.style.display = "none";
+    elTabBar.style.display = "flex";
     elEmptyState && elEmptyState.remove();
 
     elInputBar.style.display    = "none";

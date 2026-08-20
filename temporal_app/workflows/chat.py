@@ -13,6 +13,7 @@ with workflow.unsafe.imports_passed_through():
 class ChatWorkflow:
     def __init__(self) -> None:
         self._history: List[Dict] = []
+        self._llm_log: List[Dict] = []
         self._state: str = "starting"
         self._pending_input: Optional[str] = None
         self._pending_confirmation: Optional[bool] = None
@@ -40,6 +41,10 @@ class ChatWorkflow:
         return self._history
 
     @workflow.query
+    def get_llm_log(self) -> List[Dict]:
+        return self._llm_log
+
+    @workflow.query
     def get_state(self) -> Dict:
         return {
             "state": self._state,
@@ -59,7 +64,7 @@ class ChatWorkflow:
     # ------------------------------------------------------------------
 
     @workflow.run
-    async def run(self, kickoff_message: str = "[CHAT_START]") -> str:
+    async def run(self, kickoff_message: str = "[CHAT_START]", require_confirmation: bool = True) -> str:
         retry = RetryPolicy(maximum_attempts=3, initial_interval=timedelta(seconds=2))
 
         # Seed the conversation so the LLM always has something to respond to
@@ -74,6 +79,14 @@ class ChatWorkflow:
                 start_to_close_timeout=timedelta(seconds=120),
                 retry_policy=retry,
             )
+
+            # Store LLM I/O for the debug log before consuming the response
+            self._llm_log.append({
+                "call": len(self._llm_log) + 1,
+                "input": response_dict.pop("_llm_input", []),
+                "raw_output": response_dict.pop("_llm_raw_output", ""),
+                "action_type": response_dict.get("next_action", {}).get("type", ""),
+            })
 
             message: str = response_dict["message"]
             action: Dict = response_dict["next_action"]
@@ -101,9 +114,12 @@ class ChatWorkflow:
                 self._pending_tool_args = tool_args
                 self._state = "waiting_confirmation"
 
-                await workflow.wait_condition(lambda: self._pending_confirmation is not None)
-                confirmed = self._pending_confirmation
-                self._pending_confirmation = None
+                if require_confirmation:
+                    await workflow.wait_condition(lambda: self._pending_confirmation is not None)
+                    confirmed = self._pending_confirmation
+                    self._pending_confirmation = None
+                else:
+                    confirmed = True  # auto-approve when CONFIRMATION=false
 
                 if confirmed:
                     result = await workflow.execute_activity(

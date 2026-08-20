@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from dataclasses import asdict
 from typing import Any, Dict, List
@@ -184,6 +185,10 @@ async def propose_next_action(history: List[Dict]) -> Dict:
 
     raw = await llm.chat(messages)
 
+    if os.getenv("LOG_LLM_CALLS", "false").lower() == "true":
+        activity.logger.info("LLM INPUT:\n%s", json.dumps([{"role": m.role, "content": m.content} for m in messages], indent=2))
+        activity.logger.info("LLM OUTPUT:\n%s", raw)
+
     try:
         response = _parse_llm_response(raw)
     except (ValueError, KeyError) as exc:
@@ -193,7 +198,11 @@ async def propose_next_action(history: List[Dict]) -> Dict:
             non_retryable=False,  # allow retry — the model may do better next time
         ) from exc
 
-    return asdict(response)
+    result = asdict(response)
+    # Always include I/O so the frontend LLM Log tab can display them
+    result["_llm_input"] = [{"role": m.role, "content": m.content} for m in messages]
+    result["_llm_raw_output"] = raw
+    return result
 
 
 @activity.defn
