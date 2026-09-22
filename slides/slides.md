@@ -39,7 +39,7 @@ duration: 35min
 13:20 - 13:35: Voorbeeld van agent zonder Temporal => Koen
 13:35 - 14:00: Eerste opdrachtje => Iedereen
 14:00 - 14:15: Pauze => Iedereen
-14:15 - 15:45: hackathon => Everyone
+14:15 - 15:45: hackathon => Everyone, groepjes van 5
 15:45 - 16:15: Demos + Wrap-up => iedereen, plenair
 16:15 - donker: Borrel => Iedereen
 
