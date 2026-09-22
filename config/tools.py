@@ -72,6 +72,12 @@ async def _book_flight(
 # ---------------------------------------------------------------------------
 
 TOOLS: Dict[str, ToolDefinition] = {
+    "final_message": ToolDefinition(
+        name="final_message",
+        description="Show a final message to the user and end the chat. Put the message in the response message field.",
+        parameters={},
+        require_confirmation=False,
+    ),
     "search_flights": ToolDefinition(
         name="search_flights",
         description="Search for available flights between two cities in a given month. Make sure to ask the user for both the departure and the destination city.",

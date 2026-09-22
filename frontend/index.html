@@ -119,6 +119,9 @@
         white-space: pre-wrap;
         word-break: break-word;
       }
+      .msg-bubble strong {
+        font-weight: 700;
+      }
       .assistant .msg-bubble {
         background: #f0f2ff;
         color: #1a1a2e;
@@ -727,12 +730,28 @@
 
         const bubble = document.createElement("div");
         bubble.className = "msg-bubble";
-        bubble.textContent = content;
+        renderMessageContent(bubble, content);
 
         wrap.appendChild(label);
         wrap.appendChild(bubble);
         elMessages.insertBefore(wrap, elTyping);
         elMessages.scrollTop = elMessages.scrollHeight;
+      }
+
+      function renderMessageContent(container, content) {
+        const pattern = /\*([^*\n]+)\*/g;
+        let lastIndex = 0;
+        let match;
+
+        while ((match = pattern.exec(content)) !== null) {
+          container.appendChild(document.createTextNode(content.slice(lastIndex, match.index)));
+          const strong = document.createElement("strong");
+          strong.textContent = match[1];
+          container.appendChild(strong);
+          lastIndex = pattern.lastIndex;
+        }
+
+        container.appendChild(document.createTextNode(content.slice(lastIndex)));
       }
 
       function showTyping(visible) {

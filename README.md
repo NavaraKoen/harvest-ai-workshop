@@ -25,7 +25,7 @@ start_workflow()
          │                        ├─ confirmed → execute_tool()
          │                        └─ declined  → add note to history
          ├─ execute_tool       → execute_tool() immediately
-         └─ end_chat           → break
+         └─ final_message      → end chat
 ```
 
 ## Prerequisites

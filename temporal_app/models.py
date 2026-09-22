@@ -7,7 +7,7 @@ class ActionType(str, Enum):
     ASK_INPUT = "ask_input"
     ASK_CONFIRMATION = "ask_confirmation"
     EXECUTE_TOOL = "execute_tool"
-    END_CHAT = "end_chat"
+    FINAL_MESSAGE = "final_message"
 
 
 @dataclass
