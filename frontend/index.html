@@ -455,6 +455,15 @@
         font-size: 0.88rem;
         color: #999;
       }
+      #failed-notice {
+        display: none;
+        border-top: 1px solid #f3c4c4;
+        padding: 14px;
+        text-align: center;
+        font-size: 0.88rem;
+        color: #a33a3a;
+        background: #fff5f5;
+      }
     </style>
   </head>
   <body>
@@ -506,6 +515,7 @@
       <div id="ended-notice">
         Chat session has ended. Start a new chat to continue.
       </div>
+      <div id="failed-notice"></div>
     </div>
 
     <script>
@@ -516,6 +526,7 @@
       let pollTimer = null;
       let lastHistoryLen = 0;
       let currentState = null;
+      let currentError = null;
 
       // ── DOM refs ──────────────────────────────────────────────────────────────
       const elMessages = document.getElementById("messages");
@@ -530,6 +541,7 @@
       const elBtnYes = document.getElementById("btn-yes");
       const elBtnNo = document.getElementById("btn-no");
       const elEndedNotice = document.getElementById("ended-notice");
+      const elFailedNotice = document.getElementById("failed-notice");
       const elBtnNewChat = document.getElementById("btn-new-chat");
       const elTabBar = document.getElementById("tab-bar");
       const elLlmLogPanel = document.getElementById("llm-log-panel");
@@ -732,6 +744,7 @@
         elInputBar.style.display = "none";
         elConfirmBar.style.display = "none";
         elEndedNotice.style.display = "none";
+        elFailedNotice.style.display = "none";
 
         if (state === "waiting_input") {
           elInputBar.style.display = "flex";
@@ -740,6 +753,11 @@
           elConfirmBar.style.display = "flex";
         } else if (state === "ended") {
           elEndedNotice.style.display = "block";
+          stopPolling();
+        } else if (state === "failed") {
+          elFailedNotice.textContent =
+            currentError ?? "The chat workflow failed. Check the worker logs for details.";
+          elFailedNotice.style.display = "block";
           stopPolling();
         }
 
@@ -753,6 +771,16 @@
           const res = await fetch(`${API}/api/chat/${workflowId}/state`);
           if (!res.ok) return;
           const data = await res.json();
+
+          if (data.state === "failed") {
+            currentError = data.error;
+            if (data.state !== currentState) {
+              currentState = data.state;
+              setUI(data.state);
+              addMessage("system", `⚠ ${currentError}`);
+            }
+            return;
+          }
 
           // Render new history entries (skip internal markers and tool results)
           const entries = data.history ?? [];
@@ -805,6 +833,7 @@
         lastHistoryLen = 0;
         lastLogLen = 0;
         currentState = null;
+        currentError = null;
 
         // Clear messages and log (keep the typing element)
         [...elMessages.children].forEach((el) => {
@@ -826,6 +855,7 @@
         elInputBar.style.display = "none";
         elConfirmBar.style.display = "none";
         elEndedNotice.style.display = "none";
+        elFailedNotice.style.display = "none";
         showTyping(true);
 
         try {

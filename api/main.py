@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from temporalio.client import Client
+from temporalio.client import Client, WorkflowExecutionStatus
 from temporalio.service import RPCError
 
 from api.services import router as services_router
@@ -57,6 +57,7 @@ class ChatStateResponse(BaseModel):
     pending_tool: Optional[str] = None
     pending_tool_args: Optional[Dict[str, Any]] = None
     history: List[Dict[str, Any]] = []
+    error: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -108,6 +109,12 @@ async def get_state(workflow_id: str) -> ChatStateResponse:
     client = await _client()
     handle = client.get_workflow_handle(workflow_id)
     try:
+        description = await handle.describe()
+        if description.status == WorkflowExecutionStatus.FAILED:
+            return ChatStateResponse(
+                state="failed",
+                error="The chat workflow failed. Check the worker logs for details.",
+            )
         state_dict = await handle.query(ChatWorkflow.get_state)
         history = await handle.query(ChatWorkflow.get_history)
     except RPCError as exc:

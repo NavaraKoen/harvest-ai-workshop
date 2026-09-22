@@ -21,6 +21,8 @@ in a friendly, step-by-step conversation.
 CRITICAL: You MUST respond with ONLY a single valid JSON object — no markdown fences, \
 no prose before or after.
 
+If you return plain text instead of JSON, it will be shown to the user as your conversational message and treated as an "ask_input" action. Prefer the JSON format whenever possible.
+
 Required JSON format:
 {{
   "message": "<your conversational reply to show the user>",
@@ -135,7 +137,16 @@ def _extract_json(text: str) -> dict:
 
 
 def _parse_llm_response(raw: str) -> LLMResponse:
-    data = _extract_json(raw)
+    try:
+        data = _extract_json(raw)
+    except ValueError:
+        plain_text = raw.strip()
+        if not plain_text:
+            raise
+        return LLMResponse(
+            message=plain_text,
+            next_action=NextAction(type=ActionType.ASK_INPUT.value),
+        )
 
     if "message" not in data:
         raise ValueError("LLM JSON missing required 'message' field")

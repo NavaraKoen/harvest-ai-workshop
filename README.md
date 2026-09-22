@@ -10,7 +10,7 @@ api/                FastAPI proxy → Temporal Client
 temporal_app/
   workflows/        ChatWorkflow  (while-true loop)
   activities/       propose_next_action, execute_tool
-llm/                LLM abstraction (Ollama / OpenAI)
+llm/                LLM abstraction (Ollama / OpenAI / Anthropic)
 config/tools.py     Tool registry
 ```
 
@@ -81,6 +81,17 @@ OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
 # Optional — point at a local proxy like LM Studio:
 # OPENAI_BASE_URL=http://localhost:1234/v1
+```
+
+## Switching to Anthropic
+
+Edit `.env`:
+
+```env
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_MAX_TOKENS=4096
 ```
 
 ## Adding tools
