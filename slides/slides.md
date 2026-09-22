@@ -24,5 +24,39 @@ comark: true
 duration: 35min
 ---
 
-# Welcome to Slidev
+# Agentic Engineering masterclass
+
+
+---
+
+# Introductie
+
+---
+
+# Timetable
+
+13:00 - 13:20: Intro => Koen
+13:20 - 13:35: Voorbeeld van agent zonder Temporal => Koen
+13:35 - 14:00: Eerste opdrachtje => Iedereen
+14:00 - 14:15: Pauze => Iedereen
+14:15 - 15:45: hackathon => Everyone
+15:45 - 16:15: Demos + Wrap-up => iedereen, plenair
+16:15 - donker: Borrel => Iedereen
+
+--- 
+
+---
+
+# Todo
+
+- API Key fixen
+- Voorbereiding naar Harvest sturen
+- Voorbeeld van agent zonder Temporal => Koen
+- Refactor => Lars
+- ~~Timetable~~
+- Opdrachtvoorbeelden (praktisch)
+  - Lars bereidt de eerste opdracht voor (uitwerking)
+  - Aantal ideeen voor opdrachten bijplussen
+- Hackathon voorbeelden / ideeen
+
 
