@@ -744,14 +744,18 @@
         let match;
 
         while ((match = pattern.exec(content)) !== null) {
-          container.appendChild(document.createTextNode(content.slice(lastIndex, match.index)));
+          container.appendChild(
+            document.createTextNode(content.slice(lastIndex, match.index)),
+          );
           const strong = document.createElement("strong");
           strong.textContent = match[1];
           container.appendChild(strong);
           lastIndex = pattern.lastIndex;
         }
 
-        container.appendChild(document.createTextNode(content.slice(lastIndex)));
+        container.appendChild(
+          document.createTextNode(content.slice(lastIndex)),
+        );
       }
 
       function showTyping(visible) {
@@ -775,7 +779,8 @@
           stopPolling();
         } else if (state === "failed") {
           elFailedNotice.textContent =
-            currentError ?? "The chat workflow failed. Check the worker logs for details.";
+            currentError ??
+            "The chat workflow failed. Check the worker logs for details.";
           elFailedNotice.style.display = "block";
           stopPolling();
         }
@@ -898,6 +903,9 @@
         elBtnSend.disabled = true;
         elInputBar.style.display = "none";
         showTyping(true);
+        // Invalidate the cached state so poll() re-syncs the UI even if the
+        // workflow state round-trips back to "waiting_input" between polls.
+        currentState = null;
 
         try {
           await fetch(`${API}/api/chat/${workflowId}/input`, {
@@ -927,6 +935,9 @@
       async function sendConfirmation(confirmed) {
         elConfirmBar.style.display = "none";
         showTyping(true);
+        // Invalidate the cached state so poll() re-syncs the UI even if the
+        // workflow state round-trips back to "waiting_confirmation" between polls.
+        currentState = null;
         await fetch(`${API}/api/chat/${workflowId}/confirm`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
