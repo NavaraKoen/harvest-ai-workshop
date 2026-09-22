@@ -146,7 +146,28 @@ graph LR
 
 # Enter Temporal
 
+---
+layout: two-cols
+---
 
+# Workshop
+
+Agentic Orchestration workshop: Praten met een LLM
+
+- Introductie op de repo
+- Probleemstelling
+- Korte demo
+- Demo zonder Temporal als Durability platform
+- Eerste opdrachtje
+- Hackathon!
+
+::right::
+
+<div class="flex flex-col gap-2 items-center justify-center h-full">
+  <img src="/img/koen.png" class="w-40 rounded-md shadow" />
+  <img src="/img/lars.png" class="w-40 rounded-md shadow" />
+  <img src="/img/ifran.png" class="w-40 rounded-md shadow" />
+</div>
 
 ---
 
