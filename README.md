@@ -71,6 +71,17 @@ pnpm --dir slides dev
 
 Build the deck with `pnpm --dir slides build` or export it with `pnpm --dir slides export`.
 
+## Temporal-less failure demo
+
+The standalone [`temporal_less_demo/`](temporal_less_demo/) shows the same kind of LLM
+failure without Temporal or automatic retries:
+
+```bash
+uv run python temporal_less_demo/app.py --scenario api-error
+uv run python temporal_less_demo/app.py --scenario invalid-json
+uv run python temporal_less_demo/app.py --scenario success
+```
+
 ## Switching to OpenAI (or any OpenAI-compatible API)
 
 Edit `.env`:

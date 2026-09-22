@@ -3,15 +3,9 @@
 theme: seriph
 # random image from a curated Unsplash collection by Anthony
 # like them? see https://unsplash.com/collections/94734566/slidev
-background: https://cover.sli.dev
+background: https://images.unsplash.com/photo-1737644467636-6b0053476bb2?q=80&w=2572&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
 # some information about your slides (markdown enabled)
-title: Welcome to Slidev
-info: |
-  ## Slidev Starter Template
-  Presentation slides for developers.
-
-  Learn more at [Sli.dev](https://sli.dev)
-# apply UnoCSS classes to the current slide
+title: Agentic Engineering Workshop
 class: text-center
 # https://sli.dev/features/drawing
 drawings:
@@ -26,22 +20,29 @@ duration: 35min
 
 # Agentic Engineering masterclass
 
+## Harvest
+
+25-09-2026
 
 ---
 
 # Introductie
 
+
+
 ---
 
 # Timetable
 
-13:00 - 13:20: Intro => Koen
-13:20 - 13:35: Voorbeeld van agent zonder Temporal => Koen
-13:35 - 14:00: Eerste opdrachtje => Iedereen
-14:00 - 14:15: Pauze => Iedereen
-14:15 - 15:45: hackathon => Everyone, groepjes van 5
-15:45 - 16:15: Demos + Wrap-up => iedereen, plenair
-16:15 - donker: Borrel => Iedereen
+| Tijd | Onderdeel |
+| --- | --- |
+| 13:00 - 13:20 | Intro |
+| 13:20 - 13:35 | Voorbeeld van agent zonder Temporal |
+| 13:35 - 14:00 | Eerste opdrachtje |
+| 14:00 - 14:15 | Pauze |
+| 14:15 - 15:45 | Hackathon |
+| 15:45 - 16:15 | Demos + wrap-up |
+| 16:15 - donker | Borrel |
 
 --- 
 
