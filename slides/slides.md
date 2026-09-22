@@ -34,20 +34,119 @@ layout: two-cols
 - Consultant @ BBTG
 - "Quality Assurance Engineer" @ Eneco
 - Privé
-  - Vrouw en een dochter van 2,5
+  - Getrouwd, dochter van 2,5
   - Gamer
   - Muziekliefhebber
   - Ik ren
 - Achtergrond
   - Master Computer Science (Leiden)
   - 3 jaar Capgemini als Consultant en trainer
-  - (over 6 dagen) 6 jaar in dienst bij NAVARA
+  - (over 6 dagen) 6 jaar in dienst bij NAVARA / BBTG
 
 ::right::
 
 <div class="flex items-center justify-center h-full">
   <img src="/img/koen.png" class="w-80 rounded-md shadow" />
 </div>
+
+---
+
+# Mijn reis tot zover
+- Capgemini
+  - Frontends, Angular
+  - Backend, C# / .NET
+  - Trainer voor Software Engineering (Full-stack, Java)
+- via NAVARA @Essent
+  - Frontend (Angular) 2022-2024
+  - Backend (AWS serverless) 2024-2025
+  - Durability (Temporal) 2025-2026
+- Via NAVARA @Eneco
+  - "Quality Assurance Engineer" in een OT team
+  - Megabatterijen
+- Trainer
+
+
+---
+
+# Essent - oorspronkelijke situatie
+Van hopeloos verouderde integratie naar een TypeScript monorepo
+
+- Axway => Tibco low-code => SAP
+- TypeScript frontends in monorepo
+- "Doet ie het wel of doet ie het niet"
+
+---
+
+# Essent - oorspronkelijke situatie
+Van hopeloos verouderde integratie naar een TypeScript monorepo
+
+```mermaid
+graph LR
+  User[User] --> Gateway[Axway API Gateway]
+  Gateway --> Functional[Tibco Functional Service]
+  Functional --> Entity[Tibco Entity Service]
+  Entity --> SAP[SAP]
+```
+
+"Oeps, er is iets misgegaan"
+
+---
+transition: slide-up
+---
+
+# Doorlooptijd per wijziging
+
+```mermaid
+graph LR
+  User[User] -->|3 weken| Gateway[Axway API Gateway]
+  Gateway -->|3 weken| Functional[Tibco Functional Service]
+  Functional -->|3 weken| Entity[Tibco Entity Service]
+  Entity -->|4 weken| SAP[SAP]
+```
+
+- Axway API: **3 weken**
+- Tibco Functional Service: **3 weken**
+- Tibco Entity Service: **3 weken**
+- SAP: **4 weken**
+- **Totaal: 13 weken** voor een end-to-end wijziging
+
+---
+
+# Enter NAVARA
+
+- PoC met MonoRepo platform + AWS Serverless deployments
+- Doorlooptijden van < 30 minuten
+- Monitoring out of the box
+- Alerting out of the box
+- Configuration as code
+- "Eindeloze" schaalbaarheid
+- Services as code => transparency
+- Standardization of code
+- Linting
+- _Unit tests??_
+- _Integration tests???_
+
+---
+
+# Nieuwe Architectuur
+
+```mermaid
+graph LR
+  User[User] --> Gateway["AWS API Gateway (deployed from code)"]
+  Gateway --> Functional["AWS Lambda Functional Service (deployed from code)"]
+  Functional --> SAP
+
+  subgraph Minuten ["⏱️ Valideert en deployed in minuten, niet weken"]
+    Gateway
+    Functional
+  end
+```
+
+---
+
+# Enter Temporal
+
+
 
 ---
 
@@ -64,21 +163,6 @@ layout: two-cols
 | 16:15 - donker | Borrel                               |
 
 --- 
-
-# Mijn reis tot zover
-- Capgemini
-  - Frontends, Angular
-  - Backend, C# / .NET
-  - Trainer voor Software Engineering (Full-stack, Java)
-- via NAVARA @Essent
-  - Frontend (Angular) 2022-2024
-  - Backend (AWS serverless) 2024-2025
-  - Durability (Temporal) 2025-2026
-- Via NAVARA @Eneco
-  - "Quality Assurance Engineer" in een OT team
-  - Megabatterijen
-
----
 
 # Todo
 
