@@ -2,7 +2,7 @@ import json
 import os
 import re
 from dataclasses import asdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
@@ -189,14 +189,42 @@ async def propose_next_action(history: List[Dict]) -> Dict:
         activity.logger.info("LLM INPUT:\n%s", json.dumps([{"role": m.role, "content": m.content} for m in messages], indent=2))
         activity.logger.info("LLM OUTPUT:\n%s", raw)
 
-    try:
-        response = _parse_llm_response(raw)
-    except (ValueError, KeyError) as exc:
+    # Solution for Workshop Block 2.2 — repair loop.
+    # If the model's reply fails schema validation, don't immediately fail the
+    # activity (which would trigger a full, expensive Temporal retry with no
+    # extra guidance). Instead, tell the model exactly what was wrong and give
+    # it one more chance within the same activity execution.
+    max_repair_attempts = 1
+    response = None
+    last_exc: Optional[Exception] = None
+    for attempt in range(max_repair_attempts + 1):
+        try:
+            response = _parse_llm_response(raw)
+            break
+        except (ValueError, KeyError) as exc:
+            last_exc = exc
+            if attempt >= max_repair_attempts:
+                break
+            messages.append(Message(role="assistant", content=raw))
+            messages.append(Message(
+                role="user",
+                content=(
+                    f"Your last reply was not valid: {exc}. "
+                    "Reply again with ONLY the required JSON object — no markdown, no extra text."
+                ),
+            ))
+            if os.getenv("LOG_LLM_CALLS", "false").lower() == "true":
+                activity.logger.info("LLM repair attempt %d, reason: %s", attempt + 1, exc)
+            raw = await llm.chat(messages)
+            if os.getenv("LOG_LLM_CALLS", "false").lower() == "true":
+                activity.logger.info("LLM REPAIR OUTPUT:\n%s", raw)
+
+    if response is None:
         raise ApplicationError(
-            f"LLM returned invalid JSON: {exc}",
+            f"LLM returned invalid JSON after {max_repair_attempts} repair attempt(s): {last_exc}",
             type="InvalidLLMResponse",
-            non_retryable=False,  # allow retry — the model may do better next time
-        ) from exc
+            non_retryable=False,  # allow the Temporal activity retry — the model may do better next time
+        )
 
     result = asdict(response)
     # Always include I/O so the frontend LLM Log tab can display them

@@ -19,6 +19,12 @@ class OllamaLLM(BaseLLM):
             "model": self.model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "stream": False,
+            # Solution for Workshop Block 2.1 — ask Ollama to constrain output to
+            # syntactically valid JSON. Note this does NOT guarantee our schema
+            # (message/next_action keys, valid action type) is honored — only that
+            # the output parses as JSON. Schema-level repair still lives in
+            # temporal_app/activities/llm_activities.py (see Block 2.2).
+            "format": "json",
         }
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(f"{self.base_url}/api/chat", json=payload)
