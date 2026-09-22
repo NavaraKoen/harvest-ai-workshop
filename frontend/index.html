@@ -341,11 +341,20 @@
         flex-direction: column;
         background: #f8f9ff;
       }
+      #llm-raw-log-panel {
+        display: none;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 16px;
+        gap: 12px;
+        flex-direction: column;
+        background: #f8f9ff;
+      }
       .log-entry {
         background: #fff;
         border: 1px solid #e0e4ff;
         border-radius: 8px;
-        max-height: 400px;
       }
       .log-entry-header {
         display: flex;
@@ -371,7 +380,6 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-height: 400px;
       }
       .log-section-label {
         font-size: 0.72rem;
@@ -384,8 +392,6 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
-        max-height: 260px;
-        overflow-y: auto;
       }
       .log-msg {
         font-size: 0.78rem;
@@ -420,7 +426,24 @@
         padding: 6px 8px;
         white-space: pre-wrap;
         word-break: break-word;
-        max-height: 300px;
+      }
+      .raw-log-entry {
+        background: #fff;
+        border: 1px solid #e0e4ff;
+        border-radius: 8px;
+        padding: 10px 12px;
+      }
+      .raw-log-entry-header {
+        color: #1a1a2e;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .raw-log-section {
+        margin-top: 8px;
+      }
+      .raw-log-section:first-of-type {
+        margin-top: 0;
       }
 
       /* ── Ended notice ── */
@@ -444,6 +467,7 @@
       <div id="tab-bar">
         <button class="tab-btn active" data-tab="chat">Chat</button>
         <button class="tab-btn" data-tab="llm-log">LLM Log</button>
+        <button class="tab-btn" data-tab="llm-raw-log">Raw LLM Log</button>
       </div>
 
       <div id="messages">
@@ -455,6 +479,7 @@
       </div>
 
       <div id="llm-log-panel"></div>
+      <div id="llm-raw-log-panel"></div>
 
       <div id="confirmation-bar">
         <div class="confirm-header">
@@ -508,6 +533,7 @@
       const elBtnNewChat = document.getElementById("btn-new-chat");
       const elTabBar = document.getElementById("tab-bar");
       const elLlmLogPanel = document.getElementById("llm-log-panel");
+      const elLlmRawLogPanel = document.getElementById("llm-raw-log-panel");
       let activeTab = "chat";
       let lastLogLen = 0;
 
@@ -520,14 +546,16 @@
           .querySelectorAll(".tab-btn")
           .forEach((b) => b.classList.toggle("active", b === btn));
         elMessages.parentElement
-          .querySelectorAll("#messages, #llm-log-panel")
+          .querySelectorAll("#messages, #llm-log-panel, #llm-raw-log-panel")
           .forEach((el) => {
             el.style.display = "none";
           });
         if (activeTab === "chat") {
           elMessages.style.display = "flex";
-        } else {
+        } else if (activeTab === "llm-log") {
           elLlmLogPanel.style.display = "flex";
+        } else {
+          elLlmRawLogPanel.style.display = "flex";
         }
       });
 
@@ -606,6 +634,39 @@
         return el;
       }
 
+      function renderRawLogEntry(entry) {
+        const el = document.createElement("div");
+        el.className = "raw-log-entry";
+
+        const header = document.createElement("div");
+        header.className = "raw-log-entry-header";
+        header.textContent = `Call #${entry.call}`;
+        el.appendChild(header);
+
+        for (const [label, value] of [
+          ["LLM input", entry.input ?? []],
+          ["LLM output", entry.raw_output ?? ""],
+        ]) {
+          const section = document.createElement("div");
+          section.className = "raw-log-section";
+
+          const labelEl = document.createElement("div");
+          labelEl.className = "log-section-label";
+          labelEl.textContent = label;
+
+          const content = document.createElement("pre");
+          content.className = "log-raw";
+          content.textContent =
+            typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+          section.appendChild(labelEl);
+          section.appendChild(content);
+          el.appendChild(section);
+        }
+
+        return el;
+      }
+
       function escHtml(s) {
         return s
           .replace(/&/g, "&amp;")
@@ -622,7 +683,9 @@
           const entries = data.entries ?? [];
           for (let i = lastLogLen; i < entries.length; i++) {
             elLlmLogPanel.appendChild(renderLogEntry(entries[i]));
+            elLlmRawLogPanel.appendChild(renderRawLogEntry(entries[i]));
             elLlmLogPanel.scrollTop = elLlmLogPanel.scrollHeight;
+            elLlmRawLogPanel.scrollTop = elLlmRawLogPanel.scrollHeight;
           }
           lastLogLen = entries.length;
         } catch (e) {
@@ -748,6 +811,7 @@
           if (el !== elTyping) el.remove();
         });
         elLlmLogPanel.innerHTML = "";
+        elLlmRawLogPanel.innerHTML = "";
         // Switch to chat tab and show tab bar
         activeTab = "chat";
         document
@@ -755,6 +819,7 @@
           .forEach((b, i) => b.classList.toggle("active", i === 0));
         elMessages.style.display = "flex";
         elLlmLogPanel.style.display = "none";
+        elLlmRawLogPanel.style.display = "none";
         elTabBar.style.display = "flex";
         elEmptyState && elEmptyState.remove();
 

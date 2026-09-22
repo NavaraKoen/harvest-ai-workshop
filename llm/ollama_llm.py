@@ -19,6 +19,7 @@ class OllamaLLM(BaseLLM):
             "model": self.model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "stream": False,
+            "format": "json"
         }
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(f"{self.base_url}/api/chat", json=payload)

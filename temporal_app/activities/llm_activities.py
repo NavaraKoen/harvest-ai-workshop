@@ -78,7 +78,7 @@ Ending after booking:
 Rules:
 1. ONLY output valid JSON — nothing else, no markdown, no extra text.
 2. ALWAYS follow the booking flow above in order.
-3. When history contains a [CHAT_START] marker, respond with the greeting in example 1.
+3. When the last history entry contains a [CHAT_START] marker, respond with the greeting in example 1.
 4. Keep "message" friendly, helpful and concise.
 5. Always present tool results in a readable way before asking the next question.
 """
