@@ -185,6 +185,27 @@ Agentic Orchestration workshop: Praten met een LLM
 
 --- 
 
+# Introductie repo
+
+```
+- api
+- config
+- frontend
+- llm
+- slides <-- deze slides
+- temporal_app
+- temporal_less_demo
+```
+
+---
+
+# Praten met een LLM 101
+
+Hoe pak je dat eigenlijk aan?
+
+
+---
+
 # Todo
 
 - ~~API Key fixen~~

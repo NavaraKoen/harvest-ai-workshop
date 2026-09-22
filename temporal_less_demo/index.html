@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Temporal-less failure demo</title>
+    <style>
+      :root { color: #17202a; background: #eef3f1; font-family: Georgia, serif; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
+      main { width: min(760px, calc(100% - 32px)); padding: 32px; background: #fffdf7; border: 1px solid #d7ddd8; box-shadow: 10px 10px 0 #cddbd4; }
+      h1 { margin: 0 0 8px; font-size: clamp(2rem, 6vw, 4rem); line-height: .95; }
+      p { color: #596760; line-height: 1.5; }
+      .controls { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
+      button { border: 0; padding: 12px 16px; border-radius: 4px; cursor: pointer; color: #fff; background: #236b58; font: 600 0.95rem Georgia, serif; }
+      button:hover { background: #174c3f; }
+      button[data-scenario="api-error"] { background: #a6493f; }
+      button[data-scenario="invalid-json"] { background: #b87924; }
+      #result { min-height: 180px; padding: 18px; background: #18251f; color: #e5f0e8; white-space: pre-wrap; font: 0.9rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+      .hint { font-size: .9rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>One call. No retry.</h1>
+      <p>Choose a response path to see how a regular application handles an upstream failure or malformed LLM output without Temporal durability.</p>
+      <div class="controls">
+        <button data-scenario="api-error">Simulate API failure</button>
+        <button data-scenario="invalid-json">Simulate invalid JSON</button>
+        <button data-scenario="success">Run success path</button>
+      </div>
+      <div id="result">Choose a scenario to make one LLM call.</div>
+      <p class="hint">Failures are returned to this page. The server stays alive, but the individual operation is done after one attempt.</p>
+    </main>
+    <script>
+      const result = document.getElementById("result");
+      for (const button of document.querySelectorAll("button")) {
+        button.addEventListener("click", async () => {
+          result.textContent = `Calling once: ${button.dataset.scenario}...`;
+          for (const other of document.querySelectorAll("button")) other.disabled = true;
+          try {
+            const response = await fetch("/api/run", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ scenario: button.dataset.scenario }),
+            });
+            result.textContent = JSON.stringify(await response.json(), null, 2);
+          } catch (error) {
+            result.textContent = `Frontend could not reach the demo server: ${error}`;
+          } finally {
+            for (const other of document.querySelectorAll("button")) other.disabled = false;
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
