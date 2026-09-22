@@ -25,33 +25,65 @@ duration: 35min
 25-09-2026
 
 ---
+layout: two-cols
+---
 
 # Introductie
 
+- Koen Griffioen
+- Consultant @ BBTG
+- "Quality Assurance Engineer" @ Eneco
+- Privé
+  - Vrouw en een dochter van 2,5
+  - Gamer
+  - Muziekliefhebber
+  - Ik ren
+- Achtergrond
+  - Master Computer Science (Leiden)
+  - 3 jaar Capgemini als Consultant en trainer
+  - (over 6 dagen) 6 jaar in dienst bij NAVARA
 
+::right::
+
+<div class="flex items-center justify-center h-full">
+  <img src="/img/koen.png" class="w-80 rounded-md shadow" />
+</div>
 
 ---
 
 # Timetable
 
-| Tijd | Onderdeel |
-| --- | --- |
-| 13:00 - 13:20 | Intro |
-| 13:20 - 13:35 | Voorbeeld van agent zonder Temporal |
-| 13:35 - 14:00 | Eerste opdrachtje |
-| 14:00 - 14:15 | Pauze |
-| 14:15 - 15:45 | Hackathon |
-| 15:45 - 16:15 | Demos + wrap-up |
-| 16:15 - donker | Borrel |
+| Tijd           | Onderdeel                            |
+| -------------- | ------------------------------------ |
+| 13:00 - 13:20  | Intro  **< Hier zijn we nu**         |
+| 13:20 - 13:35  | Voorbeeld van agents zonder Temporal |
+| 13:35 - 14:00  | Eerste opdrachtje                    |
+| 14:00 - 14:15  | Pauze                                |
+| 14:15 - 15:45  | Hackathon                            |
+| 15:45 - 16:15  | Demos + wrap-up                      |
+| 16:15 - donker | Borrel                               |
 
 --- 
+
+# Mijn reis tot zover
+- Capgemini
+  - Frontends, Angular
+  - Backend, C# / .NET
+  - Trainer voor Software Engineering (Full-stack, Java)
+- via NAVARA @Essent
+  - Frontend (Angular) 2022-2024
+  - Backend (AWS serverless) 2024-2025
+  - Durability (Temporal) 2025-2026
+- Via NAVARA @Eneco
+  - "Quality Assurance Engineer" in een OT team
+  - Megabatterijen
 
 ---
 
 # Todo
 
-- API Key fixen
-- Voorbereiding naar Harvest sturen
+- ~~API Key fixen~~
+- ~~Voorbereiding naar Harvest sturen~~
 - Voorbeeld van agent zonder Temporal => Koen
 - Refactor => Lars
 - ~~Timetable~~
