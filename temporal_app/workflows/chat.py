@@ -59,6 +59,76 @@ class ChatWorkflow:
     def _append(self, role: str, content: str) -> None:
         self._history.append({"role": role, "content": content})
 
+    async def _propose_next_action(self, retry: RetryPolicy) -> Dict:
+        """Ask the LLM what to do next, log the exchange, and return the action dict."""
+        response_dict = await workflow.execute_activity(
+            propose_next_action,
+            args=[self._history],
+            start_to_close_timeout=timedelta(seconds=120),
+            retry_policy=retry,
+        )
+
+        # Store LLM I/O for the debug log before consuming the response
+        self._llm_log.append({
+            "call": len(self._llm_log) + 1,
+            "input": response_dict.pop("_llm_input", []),
+            "raw_output": response_dict.pop("_llm_raw_output", ""),
+            "action_type": response_dict.get("next_action", {}).get("type", ""),
+        })
+
+        self._append("assistant", response_dict["message"])
+        return response_dict["next_action"]
+
+    async def _handle_ask_input(self) -> None:
+        """Wait for the user to type something and append it to the history."""
+        self._state = "waiting_input"
+        await workflow.wait_condition(lambda: self._pending_input is not None)
+        user_text = self._pending_input
+        self._pending_input = None
+        self._append("user", user_text)
+        self._state = "running"
+
+    async def _handle_ask_confirmation(self, action: Dict, retry: RetryPolicy) -> None:
+        """Wait for explicit user approval, then run the tool (or record the decline)."""
+        tool_name = action.get("tool_name") or ""
+        tool_args = action.get("tool_args") or {}
+        self._pending_tool_name = tool_name
+        self._pending_tool_args = tool_args
+        self._state = "waiting_confirmation"
+
+        await workflow.wait_condition(lambda: self._pending_confirmation is not None)
+        confirmed = self._pending_confirmation
+        self._pending_confirmation = None
+
+        if confirmed:
+            result = await workflow.execute_activity(
+                execute_tool,
+                args=[tool_name, tool_args],
+                start_to_close_timeout=timedelta(seconds=30),
+                retry_policy=retry,
+            )
+            # role "tool" — kept for LLM context but hidden from the UI
+            self._append("tool", f"Tool '{tool_name}' returned: {result}")
+        else:
+            self._append("tool", f"User declined to run tool '{tool_name}'.")
+
+        self._pending_tool_name = None
+        self._pending_tool_args = None
+        self._state = "running"
+
+    async def _handle_execute_tool(self, action: Dict, retry: RetryPolicy) -> None:
+        """Run the tool immediately, regardless of confirmation configuration."""
+        tool_name = action.get("tool_name") or ""
+        tool_args = action.get("tool_args") or {}
+        result = await workflow.execute_activity(
+            execute_tool,
+            args=[tool_name, tool_args],
+            start_to_close_timeout=timedelta(seconds=30),
+            retry_policy=retry,
+        )
+        self._append("tool", f"Tool '{tool_name}' returned: {result}")
+        self._state = "running"
+
     # ------------------------------------------------------------------
     # Main run loop
     # ------------------------------------------------------------------
@@ -72,91 +142,25 @@ class ChatWorkflow:
         self._state = "running"
 
         while True:
-            # Ask the LLM what to do next
-            response_dict = await workflow.execute_activity(
-                propose_next_action,
-                args=[self._history],
-                start_to_close_timeout=timedelta(seconds=120),
-                retry_policy=retry,
-            )
-
-            # Store LLM I/O for the debug log before consuming the response
-            self._llm_log.append({
-                "call": len(self._llm_log) + 1,
-                "input": response_dict.pop("_llm_input", []),
-                "raw_output": response_dict.pop("_llm_raw_output", ""),
-                "action_type": response_dict.get("next_action", {}).get("type", ""),
-            })
-
-            message: str = response_dict["message"]
-            action: Dict = response_dict["next_action"]
+            action = await self._propose_next_action(retry)
             action_type: str = action["type"]
 
-            self._append("assistant", message)
-
-            # ---- ask_input: wait for the user to type something -----------
             if action_type == ActionType.ASK_INPUT.value:
-                self._state = "waiting_input"
-                await workflow.wait_condition(lambda: self._pending_input is not None)
-                user_text = self._pending_input
-                self._pending_input = None
-                self._append("user", user_text)
-                self._state = "running"
+                await self._handle_ask_input()
 
-            # ---- ask_confirmation: always require explicit user approval ----
             elif action_type == ActionType.ASK_CONFIRMATION.value:
-                tool_name = action.get("tool_name") or ""
-                tool_args = action.get("tool_args") or {}
-                self._pending_tool_name = tool_name
-                self._pending_tool_args = tool_args
-                self._state = "waiting_confirmation"
+                await self._handle_ask_confirmation(action, retry)
 
-                await workflow.wait_condition(lambda: self._pending_confirmation is not None)
-                confirmed = self._pending_confirmation
-                self._pending_confirmation = None
-
-                if confirmed:
-                    result = await workflow.execute_activity(
-                        execute_tool,
-                        args=[tool_name, tool_args],
-                        start_to_close_timeout=timedelta(seconds=30),
-                        retry_policy=retry,
-                    )
-                    # role "tool" — kept for LLM context but hidden from the UI
-                    self._append("tool", f"Tool '{tool_name}' returned: {result}")
-                else:
-                    self._append("tool", f"User declined to run tool '{tool_name}'.")
-
-                self._pending_tool_name = None
-                self._pending_tool_args = None
-                self._state = "running"
-
-            # ---- execute_tool: run immediately, regardless of configuration ----
             elif action_type == ActionType.EXECUTE_TOOL.value:
-                tool_name = action.get("tool_name") or ""
-                tool_args = action.get("tool_args") or {}
-                result = await workflow.execute_activity(
-                    execute_tool,
-                    args=[tool_name, tool_args],
-                    start_to_close_timeout=timedelta(seconds=30),
-                    retry_policy=retry,
-                )
-                self._append("tool", f"Tool '{tool_name}' returned: {result}")
-                self._state = "running"
+                await self._handle_execute_tool(action, retry)
 
-            # ---- final_message: display it and end the chat ----------------
             elif action_type == ActionType.FINAL_MESSAGE.value:
                 self._state = "ended"
                 break
 
-            # Safety: unknown action type — treat as ask_input
             else:
+                # Safety: unknown action type — treat as ask_input
                 workflow.logger.warning("Unknown action_type %r, falling back to ask_input", action_type)
-                self._state = "waiting_input"
-                await workflow.wait_condition(lambda: self._pending_input is not None)
-                user_text = self._pending_input
-                self._pending_input = None
-                self._append("user", user_text)
-                self._state = "running"
+                await self._handle_ask_input()
 
         return "Chat session ended"
