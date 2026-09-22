@@ -60,6 +60,17 @@ uv run api
 open http://localhost:8000
 ```
 
+## Slides
+
+The Slidev presentation lives in `slides/` and uses pnpm:
+
+```bash
+pnpm --dir slides install
+pnpm --dir slides dev
+```
+
+Build the deck with `pnpm --dir slides build` or export it with `pnpm --dir slides export`.
+
 ## Switching to OpenAI (or any OpenAI-compatible API)
 
 Edit `.env`:
