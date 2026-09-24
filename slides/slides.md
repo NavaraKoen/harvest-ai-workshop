@@ -178,6 +178,8 @@ Platform engineering
 
 Service conversion flow
 
+<v-click>
+
 ```mermaid
 graph LR
   A[Download all files related to a service] --> B[Recreate service]
@@ -187,7 +189,7 @@ graph LR
   D -->|Something wrong| B
   D -->|OK| E[100%]
 ```
-
+</v-click>
 
 ---
 
@@ -209,6 +211,7 @@ DDD zit niet altijd mee
 <v-clicks>
 
 - Event-driven setup
+- Geen observability
 - Geen retries
 - Complete chaos
 
@@ -280,6 +283,23 @@ Agentic Orchestration workshop: Praten met een LLM
 # Praten met een LLM 101
 
 Hoe pak je dat eigenlijk aan?
+
+```
+User:  "hey"
+Agent: "hey, what can I do for you?"
+User:  "wat is het weer in Utrecht?"
+Agent: "zonnig, 18 graden"
+```
+
+Elke keer opnieuw naar de LLM:
+
+```
+<system prompt>
++ "Dit is al gezegd: user: hey | agent: hey, what can I do for you?
+   | user: wat is het weer in Utrecht? | agent: zonnig, 18 graden"
++ <nieuwe user message>
+```
+
 
 
 ---
