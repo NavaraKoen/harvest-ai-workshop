@@ -299,21 +299,3 @@ Elke keer opnieuw naar de LLM:
    | user: wat is het weer in Utrecht? | agent: zonnig, 18 graden"
 + <nieuwe user message>
 ```
-
-
-
----
-
-# Todo
-
-- ~~API Key fixen~~
-- ~~Voorbereiding naar Harvest sturen~~
-- Voorbeeld van agent zonder Temporal => Koen
-- Refactor => Lars
-- ~~Timetable~~
-- Opdrachtvoorbeelden (praktisch)
-  - Lars bereidt de eerste opdracht voor (uitwerking)
-  - Aantal ideeen voor opdrachten bijplussen
-- Hackathon voorbeelden / ideeen
-
-
