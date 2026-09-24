@@ -60,6 +60,15 @@ uv run api
 open http://localhost:8000
 ```
 
+To disable activity retries for new chat workflows, start the API with the optional flag:
+
+```bash
+uv run api --no-retries
+```
+
+Without the flag, activities use Temporal's default retry policy. The flag sets the maximum
+attempts to one, which means zero retries.
+
 ## Slides
 
 The Slidev presentation lives in `slides/` and uses pnpm:

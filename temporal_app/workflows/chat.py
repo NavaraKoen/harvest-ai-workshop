@@ -134,8 +134,13 @@ class ChatWorkflow:
     # ------------------------------------------------------------------
 
     @workflow.run
-    async def run(self, kickoff_message: str = "[CHAT_START]", require_confirmation: bool = True) -> str:
-        retry = RetryPolicy(maximum_attempts=3, initial_interval=timedelta(seconds=2))
+    async def run(
+        self,
+        kickoff_message: str = "[CHAT_START]",
+        require_confirmation: bool = True,
+        no_retries: bool = False,
+    ) -> str:
+        retry = RetryPolicy(maximum_attempts=1) if no_retries else None
 
         # Seed the conversation so the LLM always has something to respond to
         self._append("user", kickoff_message)

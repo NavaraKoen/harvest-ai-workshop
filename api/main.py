@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -70,9 +71,10 @@ async def start_chat() -> StartChatResponse:
     client = await _client()
     workflow_id = f"chat-{uuid.uuid4()}"
     require_confirmation = os.getenv("CONFIRMATION", "true").lower() != "false"
+    no_retries = os.getenv("NO_RETRIES", "false").lower() == "true"
     await client.start_workflow(
         ChatWorkflow.run,
-        args=["[CHAT_START]", require_confirmation],
+        args=["[CHAT_START]", require_confirmation, no_retries],
         id=workflow_id,
         task_queue=TASK_QUEUE,
     )
@@ -157,6 +159,9 @@ if os.path.isdir(FRONTEND_DIR):
 
 def main() -> None:
     import uvicorn
+
+    if "--no-retries" in sys.argv[1:]:
+        os.environ["NO_RETRIES"] = "true"
 
     uvicorn.run(
         "api.main:app",
