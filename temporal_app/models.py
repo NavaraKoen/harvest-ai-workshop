@@ -21,6 +21,9 @@ class NextAction:
 class LLMResponse:
     message: str
     next_action: NextAction
+    # Optional list of short, clickable reply options (max 3) the frontend can
+    # render as buttons; only meaningful when next_action.type == "ask_input".
+    choices: Optional[List[str]] = None
 
 
 @dataclass

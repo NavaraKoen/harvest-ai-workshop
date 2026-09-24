@@ -57,6 +57,7 @@ class ChatStateResponse(BaseModel):
     state: str
     pending_tool: Optional[str] = None
     pending_tool_args: Optional[Dict[str, Any]] = None
+    pending_choices: Optional[List[str]] = None
     history: List[Dict[str, Any]] = []
     error: Optional[str] = None
 
@@ -125,6 +126,7 @@ async def get_state(workflow_id: str) -> ChatStateResponse:
         state=state_dict["state"],
         pending_tool=state_dict.get("pending_tool"),
         pending_tool_args=state_dict.get("pending_tool_args"),
+        pending_choices=state_dict.get("pending_choices"),
         history=history,
     )
 

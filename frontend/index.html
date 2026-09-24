@@ -261,6 +261,31 @@
         color: #fff;
       }
 
+      /* ── Suggested choice buttons (rendered above the input bar) ── */
+      #choices-bar {
+        display: none;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 16px 0 16px;
+      }
+      .btn-choice {
+        background: #eef0fb;
+        color: #1a1a2e;
+        border: 1px solid #c9cef0;
+        border-radius: 16px;
+        padding: 7px 14px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.2s, opacity 0.2s;
+      }
+      .btn-choice:hover {
+        background: #dde1f7;
+      }
+      .btn-choice:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+
       /* ── Input bar ── */
       #input-bar {
         display: none;
@@ -506,6 +531,8 @@
         </div>
       </div>
 
+      <div id="choices-bar"></div>
+
       <div id="input-bar">
         <textarea
           id="user-input"
@@ -530,6 +557,7 @@
       let lastHistoryLen = 0;
       let currentState = null;
       let currentError = null;
+      let lastChoicesKey = null;
 
       // ── DOM refs ──────────────────────────────────────────────────────────────
       const elMessages = document.getElementById("messages");
@@ -538,6 +566,7 @@
       const elInputBar = document.getElementById("input-bar");
       const elUserInput = document.getElementById("user-input");
       const elBtnSend = document.getElementById("btn-send");
+      const elChoicesBar = document.getElementById("choices-bar");
       const elConfirmBar = document.getElementById("confirmation-bar");
       const elToolNameLabel = document.getElementById("tool-name-label");
       const elToolInfo = document.getElementById("tool-info");
@@ -824,6 +853,9 @@
             elToolInfo.textContent = args === "{}" ? "(no arguments)" : args;
           }
 
+          // Render suggested choice buttons while we're waiting on the user
+          renderChoices(data.state === "waiting_input" ? data.pending_choices : null);
+
           if (data.state !== currentState) {
             currentState = data.state;
             setUI(data.state);
@@ -858,6 +890,7 @@
         lastLogLen = 0;
         currentState = null;
         currentError = null;
+        renderChoices(null);
 
         // Clear messages and log (keep the typing element)
         [...elMessages.children].forEach((el) => {
@@ -893,15 +926,13 @@
         }
       });
 
-      // ── Send user message ─────────────────────────────────────────────────────
-      async function sendMessage() {
-        const text = elUserInput.value.trim();
+      // ── Send user message (typed or clicked choice) ─────────────────────────────
+      async function sendUserMessage(text) {
         if (!text || !workflowId) return;
 
-        elUserInput.value = "";
-        elUserInput.style.height = "auto";
         elBtnSend.disabled = true;
         elInputBar.style.display = "none";
+        renderChoices(null); // hide choice buttons immediately on submit
         showTyping(true);
         // Invalidate the cached state so poll() re-syncs the UI even if the
         // workflow state round-trips back to "waiting_input" between polls.
@@ -916,6 +947,36 @@
         } finally {
           elBtnSend.disabled = false;
         }
+      }
+
+      async function sendMessage() {
+        const text = elUserInput.value.trim();
+        if (!text) return;
+        elUserInput.value = "";
+        elUserInput.style.height = "auto";
+        await sendUserMessage(text);
+      }
+
+      // ── Suggested choice buttons ─────────────────────────────────────────────
+      function renderChoices(choices) {
+        const key = choices && choices.length ? choices.join("|") : null;
+        if (key === lastChoicesKey) return;
+        lastChoicesKey = key;
+
+        elChoicesBar.innerHTML = "";
+        if (!key) {
+          elChoicesBar.style.display = "none";
+          return;
+        }
+
+        choices.forEach((choice) => {
+          const btn = document.createElement("button");
+          btn.className = "btn-choice";
+          btn.textContent = choice;
+          btn.addEventListener("click", () => sendUserMessage(choice));
+          elChoicesBar.appendChild(btn);
+        });
+        elChoicesBar.style.display = "flex";
       }
 
       elBtnSend.addEventListener("click", sendMessage);

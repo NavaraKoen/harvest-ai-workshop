@@ -19,6 +19,10 @@ class ChatWorkflow:
         self._pending_confirmation: Optional[bool] = None
         self._pending_tool_name: Optional[str] = None
         self._pending_tool_args: Optional[Dict[str, Any]] = None
+        self._pending_choices: Optional[List[str]] = None
+        # Choices suggested by the LLM for the *next* ask_input turn, staged
+        # here between _propose_next_action and _handle_ask_input.
+        self._pending_next_choices: Optional[List[str]] = None
 
     # ------------------------------------------------------------------
     # Signal handlers
@@ -50,6 +54,7 @@ class ChatWorkflow:
             "state": self._state,
             "pending_tool": self._pending_tool_name,
             "pending_tool_args": self._pending_tool_args,
+            "pending_choices": self._pending_choices,
         }
 
     # ------------------------------------------------------------------
@@ -77,14 +82,18 @@ class ChatWorkflow:
         })
 
         self._append("assistant", response_dict["message"])
+        self._pending_next_choices = response_dict.get("choices") or None
         return response_dict["next_action"]
 
     async def _handle_ask_input(self) -> None:
-        """Wait for the user to type something and append it to the history."""
+        """Wait for the user to type something (or click a suggested choice)
+        and append it to the history."""
         self._state = "waiting_input"
+        self._pending_choices = self._pending_next_choices
         await workflow.wait_condition(lambda: self._pending_input is not None)
         user_text = self._pending_input
         self._pending_input = None
+        self._pending_choices = None
         self._append("user", user_text)
         self._state = "running"
 

@@ -1,11 +1,38 @@
 import json
 import re
+from typing import List, Optional
 
 from temporal_app.models import ActionType, LLMResponse, NextAction
+
+MAX_CHOICES = 3
 
 # ---------------------------------------------------------------------------
 # JSON extraction / validation
 # ---------------------------------------------------------------------------
+
+
+def _extract_choices(raw_choices: object) -> Optional[List[str]]:
+    """Best-effort, non-fatal normalization of the optional 'choices' field.
+
+    Invalid input (wrong type, empty/duplicate entries, etc.) never raises —
+    it just results in no choices being offered, so the free-text input
+    always remains the fallback.
+    """
+    if not isinstance(raw_choices, list):
+        return None
+
+    seen: set = set()
+    cleaned: List[str] = []
+    for item in raw_choices:
+        text = str(item).strip() if item is not None else ""
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        cleaned.append(text)
+        if len(cleaned) >= MAX_CHOICES:
+            break
+
+    return cleaned or None
 
 
 def extract_json(text: str) -> dict:
@@ -70,6 +97,7 @@ def _build_response(data: dict) -> LLMResponse:
             tool_name=action_data.get("tool_name") or None,
             tool_args=action_data.get("tool_args") or None,
         ),
+        choices=_extract_choices(data.get("choices")),
     )
 
 
