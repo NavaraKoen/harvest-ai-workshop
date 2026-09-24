@@ -299,3 +299,47 @@ Elke keer opnieuw naar de LLM:
    | user: wat is het weer in Utrecht? | agent: zonnig, 18 graden"
 + <nieuwe user message>
 ```
+
+---
+
+# Timetable
+
+| Tijd           | Onderdeel                                            |
+| -------------- | ---------------------------------------------------- |
+| 13:00 - 13:20  | Intro                                                |
+| 13:20 - 13:35  | Voorbeeld van agents zonder Temporal                 |
+| 13:35 - 14:00  | Eerste opdrachtje              **< Hier zijn we nu** |
+| 14:00 - 14:15  | Pauze                                                |
+| 14:15 - 15:45  | Hackathon                                            |
+| 15:45 - 16:15  | Demos + wrap-up                                      |
+| 16:15 - donker | Borrel                                               |
+
+---
+
+# Eerste opdrachtje
+
+Goal: extend the protocol end-to-end (prompt → models → workflow → frontend).
+
+1. `temporal_app/models.py`: add `ASK_CHOICE = "ask_choice"` to `ActionType`.
+2. `llm_activities.py`: update the system prompt to document `ask_choice` and require an
+   `"options": ["...", "..."]` field alongside `tool_name`/`tool_args` (or a new field).
+3. `chat.py` (workflow): handle `ActionType.ASK_CHOICE.value` similarly to `ask_input`, but
+   store the offered options in workflow state so the frontend can render buttons.
+4. `frontend/index.html`: render option buttons when `action_type == "ask_choice"`, and on click,
+   send the choice back via the existing `send_user_input` signal (reuse it — no new signal needed).
+5. Update the prompt's flow instructions to use `ask_choice` for "which flight/hotel do you prefer".
+
+
+---
+
+# Timetable
+
+| Tijd           | Onderdeel                                             |
+| -------------- | ----------------------------------------------------- |
+| 13:00 - 13:20  | Intro                                                 |
+| 13:20 - 13:35  | Voorbeeld van agents zonder Temporal                  |
+| 13:35 - 14:00  | Eerste opdrachtje                                     |
+| 14:00 - 14:15  | Pauze                           **< Hier zijn we nu** |
+| 14:15 - 15:45  | Hackathon                                             |
+| 15:45 - 16:15  | Demos + wrap-up                                       |
+| 16:15 - donker | Borrel                                                |
