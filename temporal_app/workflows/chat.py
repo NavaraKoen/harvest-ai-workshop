@@ -20,9 +20,6 @@ class ChatWorkflow:
         self._pending_tool_name: Optional[str] = None
         self._pending_tool_args: Optional[Dict[str, Any]] = None
         self._pending_choices: Optional[List[str]] = None
-        # Choices suggested by the LLM for the *next* ask_input turn, staged
-        # here between _propose_next_action and _handle_ask_input.
-        self._pending_next_choices: Optional[List[str]] = None
 
     # ------------------------------------------------------------------
     # Signal handlers
@@ -82,14 +79,25 @@ class ChatWorkflow:
         })
 
         self._append("assistant", response_dict["message"])
-        self._pending_next_choices = response_dict.get("choices") or None
         return response_dict["next_action"]
 
     async def _handle_ask_input(self) -> None:
-        """Wait for the user to type something (or click a suggested choice)
-        and append it to the history."""
+        """Wait for the user to type something and append it to the history."""
         self._state = "waiting_input"
-        self._pending_choices = self._pending_next_choices
+        await workflow.wait_condition(lambda: self._pending_input is not None)
+        user_text = self._pending_input
+        self._pending_input = None
+        self._append("user", user_text)
+        self._state = "running"
+
+    async def _handle_ask_choice(self, action: Dict) -> None:
+        """Offer the user a short list of options (rendered as buttons by the
+        frontend) and wait for their reply via the same input signal used by
+        ask_input — no dedicated signal is needed since the choice is just
+        sent back as plain text."""
+        self._pending_choices = action.get("options") or []
+        self._state = "waiting_choice"
+
         await workflow.wait_condition(lambda: self._pending_input is not None)
         user_text = self._pending_input
         self._pending_input = None
@@ -161,6 +169,9 @@ class ChatWorkflow:
 
             if action_type == ActionType.ASK_INPUT.value:
                 await self._handle_ask_input()
+
+            elif action_type == ActionType.ASK_CHOICE.value:
+                await self._handle_ask_choice(action)
 
             elif action_type == ActionType.ASK_CONFIRMATION.value:
                 await self._handle_ask_confirmation(action, retry)

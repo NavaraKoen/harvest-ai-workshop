@@ -4,32 +4,31 @@ from typing import List, Optional
 
 from temporal_app.models import ActionType, LLMResponse, NextAction
 
-MAX_CHOICES = 3
+MAX_OPTIONS = 3
 
 # ---------------------------------------------------------------------------
 # JSON extraction / validation
 # ---------------------------------------------------------------------------
 
 
-def _extract_choices(raw_choices: object) -> Optional[List[str]]:
-    """Best-effort, non-fatal normalization of the optional 'choices' field.
+def _extract_options(raw_options: object) -> Optional[List[str]]:
+    """Best-effort, non-fatal normalization of next_action.options.
 
     Invalid input (wrong type, empty/duplicate entries, etc.) never raises —
-    it just results in no choices being offered, so the free-text input
-    always remains the fallback.
+    it just results in no valid options.
     """
-    if not isinstance(raw_choices, list):
+    if not isinstance(raw_options, list):
         return None
 
     seen: set = set()
     cleaned: List[str] = []
-    for item in raw_choices:
+    for item in raw_options:
         text = str(item).strip() if item is not None else ""
         if not text or text in seen:
             continue
         seen.add(text)
         cleaned.append(text)
-        if len(cleaned) >= MAX_CHOICES:
+        if len(cleaned) >= MAX_OPTIONS:
             break
 
     return cleaned or None
@@ -90,14 +89,21 @@ def _build_response(data: dict) -> LLMResponse:
             f"Invalid next_action.type {raw_type!r}. Must be one of {sorted(valid_types)}"
         )
 
+    options = _extract_options(action_data.get("options"))
+    if raw_type == ActionType.ASK_CHOICE.value and not options:
+        # ask_choice without usable options is a broken schema — fall back
+        # (via the caller) to a plain message instead of leaving the
+        # frontend with no way to know what to render.
+        raise ValueError("next_action.type is 'ask_choice' but 'options' is missing/invalid")
+
     return LLMResponse(
         message=data["message"],
         next_action=NextAction(
             type=raw_type,
             tool_name=action_data.get("tool_name") or None,
             tool_args=action_data.get("tool_args") or None,
+            options=options,
         ),
-        choices=_extract_choices(data.get("choices")),
     )
 
 

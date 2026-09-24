@@ -798,7 +798,7 @@
         elEndedNotice.style.display = "none";
         elFailedNotice.style.display = "none";
 
-        if (state === "waiting_input") {
+        if (state === "waiting_input" || state === "waiting_choice") {
           elInputBar.style.display = "flex";
           elUserInput.focus();
         } else if (state === "waiting_confirmation") {
@@ -853,8 +853,8 @@
             elToolInfo.textContent = args === "{}" ? "(no arguments)" : args;
           }
 
-          // Render suggested choice buttons while we're waiting on the user
-          renderChoices(data.state === "waiting_input" ? data.pending_choices : null);
+          // Render suggested choice buttons while we're waiting on a choice
+          renderChoices(data.state === "waiting_choice" ? data.pending_choices : null);
 
           if (data.state !== currentState) {
             currentState = data.state;
