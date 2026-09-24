@@ -144,16 +144,7 @@ layout: two-cols
 - _Unit tests??_
 - _Integration tests???_
 
-::right::
 
-```ts
-export const getCustomerV1 = async (id: string) => {
-  await sapClient.connect();
-  const result = await sapClient.getCustomer(id);
-  const mapped = result.map((c) => ({ id: c.id, name: c.name }));
-  return mapped;
-};
-```
 
 ---
 
@@ -171,9 +162,67 @@ graph LR
   end
 ```
 
+```ts
+export const getCustomerV1 = async (id: string) => {
+  await sapClient.connect();
+  const result = await sapClient.getCustomer(id);
+  const mapped = result.map((c) => ({ id: c.id, name: c.name }));
+  return mapped;
+};
+```
 ---
 
-# Enter Temporal
+# Operatie "Team Lambda"
+
+Platform engineering
+
+Service conversion flow
+
+```mermaid
+graph LR
+  A[Download all files related to a service] --> B[Recreate service]
+  B --> C[Replay production requests through old and new services]
+  C -->|Differences found| B
+  C -->|No differences| D[Start scaling]
+  D -->|Something wrong| B
+  D -->|OK| E[100%]
+```
+
+
+---
+
+# Scale
+
+- 150 services*
+- 10 teams*
+- 1,5 jaar
+- 0% Tibco :)
+- 100% TypeScript + AWS Serverless met tests
+
+
+---
+
+# Next step: workflows
+
+DDD zit niet altijd mee
+
+<v-clicks>
+
+- Event-driven setup
+- Geen retries
+- Complete chaos
+
+</v-clicks>
+
+<div v-click class="absolute inset-0 flex items-center justify-center">
+  <img src="/img/thisisfinefire.png" class="w-full max-w-180 rounded-md shadow-lg" />
+</div>
+
+---
+
+<div class="absolute inset-0 flex items-center justify-center">
+  <img src="/img/Temporal_I_got_this.png" class="h-full rounded-md shadow-lg" />
+</div>
 
 ---
 layout: two-cols
