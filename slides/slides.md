@@ -31,7 +31,7 @@ layout: two-cols
 # Introductie
 
 - Koen Griffioen
-- Consultant @ BBTG
+- Software Engineering Consultant @ BBTG
 - "Quality Assurance Engineer" @ Eneco
 - Privé
   - Getrouwd, dochter van 2,5
@@ -67,6 +67,8 @@ layout: two-cols
 
 
 ---
+layout: two-cols
+---
 
 # Essent - oorspronkelijke situatie
 Van hopeloos verouderde integratie naar een TypeScript monorepo
@@ -74,6 +76,12 @@ Van hopeloos verouderde integratie naar een TypeScript monorepo
 - Axway => Tibco low-code => SAP
 - TypeScript frontends in monorepo
 - "Doet ie het wel of doet ie het niet"
+
+::right::
+
+<div class="flex items-center justify-center h-full">
+  <img src="/img/callcenter.png" class="w-80 rounded-md shadow" />
+</div>
 
 ---
 
@@ -112,6 +120,16 @@ graph LR
 
 ---
 
+# Essent - onbereikbaar?
+
+<div class="flex items-center justify-center h-full">
+  <img src="/img/essent_onbereikbaar.png" class="w-90 shadow" />
+</div>
+
+---
+layout: two-cols
+---
+
 # Enter NAVARA
 
 - PoC met MonoRepo platform + AWS Serverless deployments
@@ -125,6 +143,17 @@ graph LR
 - Linting
 - _Unit tests??_
 - _Integration tests???_
+
+::right::
+
+```ts
+export const getCustomerV1 = async (id: string) => {
+  await sapClient.connect();
+  const result = await sapClient.getCustomer(id);
+  const mapped = result.map((c) => ({ id: c.id, name: c.name }));
+  return mapped;
+};
+```
 
 ---
 
