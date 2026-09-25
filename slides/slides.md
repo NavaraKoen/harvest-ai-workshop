@@ -366,7 +366,6 @@ class: text-center
 <div class="text-8xl font-bold">DEMO</div>
 
 
-
 ---
 
 # Timetable
