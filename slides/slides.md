@@ -323,18 +323,6 @@ Agentic Orchestration workshop: Praten met een LLM
 | 15:45 - 16:15  | Demos + wrap-up                                             |
 | 16:15 - donker | Borrel                                                      |
 
---- 
-
-# Introductie repo
-
-```
-- api
-- config
-- frontend
-- llm
-- temporal_app
-- temporal_less_demo
-```
 
 ---
 
@@ -357,6 +345,27 @@ Elke keer opnieuw naar de LLM:
    | user: wat is het weer in Utrecht? | agent: zonnig, 18 graden"
 + <nieuwe user message>
 ```
+
+--- 
+
+# Introductie repo
+
+```
+- api -> backend API endpoints
+- config -> Tools
+- frontend -> Chat user interface
+- llm -> Language model broker
+- temporal_app -> Temporal workflow -> main chat loop
+```
+
+---
+layout: center
+class: text-center
+---
+
+<div class="text-8xl font-bold">DEMO</div>
+
+
 
 ---
 
