@@ -25,6 +25,20 @@ duration: 35min
 25-09-2026
 
 ---
+
+# Timetable
+
+| Tijd           | Onderdeel                            |
+| -------------- | ------------------------------------ |
+| 13:00 - 13:20  | Intro  **< Hier zijn we nu**         |
+| 13:20 - 13:35  | Agentic Engineering - intro opdracht |
+| 13:35 - 14:00  | Eerste opdrachtje                    |
+| 14:00 - 14:15  | Pauze                                |
+| 14:15 - 15:45  | Hackathon                            |
+| 15:45 - 16:15  | Demos + wrap-up                      |
+| 16:15 - donker | Borrel                               |
+
+---
 layout: two-cols
 ---
 
@@ -228,6 +242,51 @@ DDD zit niet altijd mee
 </div>
 
 ---
+layout: quote
+---
+# Wat is Temporal?
+
+Durable execution
+
+---
+
+# Hoe ziet een Temporal-driven workflow eruit?
+
+```ts
+async function processOrder(order: Order): Promise<void> {
+  // Step 1: charge the customer
+  const payment = await stripe.charges.create({
+    amount: order.totalCents,
+    customer: order.customerId,
+  });
+
+  // Step 2: fulfill the order in the warehouse system
+  await warehouseApi.createPickingTask({
+    orderId: order.id,
+    items: order.items,
+  });
+
+  // Wait two hours before sending the notification for some reason
+  wf.sleep('2 hours');
+
+  // Step 3: notify the customer
+  await sendEmail({
+    subject: "Your order is confirmed!",
+    body: `Hi ${order.customerName}, we've received order #${order.id}.`,
+  });
+}
+```
+
+---
+
+# Waarom gebruiken de grote AI bedrijven zoals OpenAI Temporal?
+
+- Een gesprek of een complexe taak kun je zien als een langlopende workflow
+- Agents die met andere agents werken krijgen te maken met connection drops
+- Tools / activiteiten die uitgevoerd moeten worden, kunnen falen of onderbroken worden
+
+
+---
 layout: two-cols
 ---
 
@@ -254,15 +313,15 @@ Agentic Orchestration workshop: Praten met een LLM
 
 # Timetable
 
-| Tijd           | Onderdeel                            |
-| -------------- | ------------------------------------ |
-| 13:00 - 13:20  | Intro  **< Hier zijn we nu**         |
-| 13:20 - 13:35  | Voorbeeld van agents zonder Temporal |
-| 13:35 - 14:00  | Eerste opdrachtje                    |
-| 14:00 - 14:15  | Pauze                                |
-| 14:15 - 15:45  | Hackathon                            |
-| 15:45 - 16:15  | Demos + wrap-up                      |
-| 16:15 - donker | Borrel                               |
+| Tijd           | Onderdeel                                                   |
+| -------------- | ----------------------------------------------------------- |
+| 13:00 - 13:20  | Intro                                                       |
+| 13:20 - 13:35  | Agentic Engineering - intro opdracht  **< Hier zijn we nu** |
+| 13:35 - 14:00  | Eerste opdrachtje                                           |
+| 14:00 - 14:15  | Pauze                                                       |
+| 14:15 - 15:45  | Hackathon                                                   |
+| 15:45 - 16:15  | Demos + wrap-up                                             |
+| 16:15 - donker | Borrel                                                      |
 
 --- 
 
@@ -273,7 +332,6 @@ Agentic Orchestration workshop: Praten met een LLM
 - config
 - frontend
 - llm
-- slides <-- deze slides
 - temporal_app
 - temporal_less_demo
 ```
@@ -307,7 +365,7 @@ Elke keer opnieuw naar de LLM:
 | Tijd           | Onderdeel                                            |
 | -------------- | ---------------------------------------------------- |
 | 13:00 - 13:20  | Intro                                                |
-| 13:20 - 13:35  | Voorbeeld van agents zonder Temporal                 |
+| 13:20 - 13:35  | Agentic Engineering - intro opdracht                 |
 | 13:35 - 14:00  | Eerste opdrachtje              **< Hier zijn we nu** |
 | 14:00 - 14:15  | Pauze                                                |
 | 14:15 - 15:45  | Hackathon                                            |
@@ -337,7 +395,7 @@ Goal: extend the protocol end-to-end (prompt → models → workflow → fronten
 | Tijd           | Onderdeel                                             |
 | -------------- | ----------------------------------------------------- |
 | 13:00 - 13:20  | Intro                                                 |
-| 13:20 - 13:35  | Voorbeeld van agents zonder Temporal                  |
+| 13:20 - 13:35  | Agentic Engineering - intro opdracht                  |
 | 13:35 - 14:00  | Eerste opdrachtje                                     |
 | 14:00 - 14:15  | Pauze                           **< Hier zijn we nu** |
 | 14:15 - 15:45  | Hackathon                                             |
