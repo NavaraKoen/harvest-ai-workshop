@@ -207,13 +207,17 @@ graph LR
 
 ---
 
-# Scale
+<div class="absolute left-8 top-2 w-80">
+  <img src="/img/lambda_teams.png" class="w-full rounded-md shadow" />
+</div>
 
-- 150 services*
-- 10 teams*
-- 1,5 jaar
-- 0% Tibco :)
-- 100% TypeScript + AWS Serverless met tests
+<div class="absolute right-8 top-2 w-80">
+  <img src="/img/trafficvsservices.png" class="w-full rounded-md shadow" />
+</div>
+
+<div class="absolute bottom-0 left-0 w-full px-8">
+  <img src="/img/progress_lambdas.png" class="w-full rounded-md shadow" />
+</div>
 
 
 ---
@@ -284,7 +288,11 @@ async function processOrder(order: Order): Promise<void> {
 - Een gesprek of een complexe taak kun je zien als een langlopende workflow
 - Agents die met andere agents werken krijgen te maken met connection drops
 - Tools / activiteiten die uitgevoerd moeten worden, kunnen falen of onderbroken worden
+- Native workflow-interacties
 
+<div class="flex justify-center overflow-hidden">
+  <img src="/img/temporal_workflow.png" class="relative -top-32 w-175" style="clip-path: inset(30% 0 0 0);" />
+</div>
 
 ---
 layout: two-cols
@@ -379,6 +387,34 @@ class: text-center
 | 14:15 - 15:45  | Hackathon                                            |
 | 15:45 - 16:15  | Demos + wrap-up                                      |
 | 16:15 - donker | Borrel                                               |
+
+---
+
+# Setup
+
+```
+git clone https://github.com/NavaraKoen/harvest-ai-workshop-public
+cd harvest-ai-workshop-public
+
+# Install dependencies
+uv sync
+
+# Copy environment file example
+cp .env.example .env
+
+# Change:
+# - LLM_PROVIDER=anthropic
+# - ANTHROPIC_API_KEY=your_api_key_here
+
+# In 3 separate terminals, run the following commands:
+# Run the temporal dev server
+temporal server start-dev
+
+# Run the worker & api
+uv run worker
+uv run api
+```
+
 
 ---
 
