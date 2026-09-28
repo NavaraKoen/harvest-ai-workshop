@@ -445,3 +445,11 @@ Goal: extend the protocol end-to-end (prompt → models → workflow → fronten
 | 14:15 - 15:45  | Hackathon                                             |
 | 15:45 - 16:15  | Demos + wrap-up                                       |
 | 16:15 - donker | Borrel                                                |
+
+
+--- 
+
+# Learning materials
+
+- https://learn.temporal.io/courses/temporal_101/
+- https://learn.temporal.io/courses/temporal_102/
